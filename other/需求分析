@@ -38,6 +38,8 @@ jrs.getData(輸入):輸出;
 輸出就由使用者指定要返回的dataClass
 所以此服務方法簽章訂為 public <T> Optional<T> getData(UrlAndQueryString qs,Class<T> dataClass);
 
+嘗試使用令牌推送
+
 
 
 

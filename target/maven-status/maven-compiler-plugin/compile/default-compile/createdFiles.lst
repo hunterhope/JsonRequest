@@ -1,7 +1,0 @@
-module-info.class
-com\hunterhope\jsonrequest\MyHttpClient.class
-com\hunterhope\jsonrequest\UrlAndQueryString.class
-com\hunterhope\jsonrequest\JsonRequestService.class
-com\hunterhope\jsonrequest\exception\DataClassFieldNameErrorException.class
-com\hunterhope\jsonrequest\exception\NoInternetException.class
-com\hunterhope\jsonrequest\exception\ServerMaintainException.class
