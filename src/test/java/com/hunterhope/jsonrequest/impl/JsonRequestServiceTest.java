@@ -41,18 +41,11 @@ public class JsonRequestServiceTest {
     @Test
     public void refactor_connectError() throws Exception {
         try {
-            //準備假物件
-            MyHttpClient myHttpClient = Mockito.mock(MyHttpClient.class);
-            //準備物件
-            JsonRequestService jrs = new JsonRequestService(myHttpClient);
-            UrlAndQueryString url = new UrlAndQueryString("https://abc.def");
-            Mockito.when(myHttpClient.sendRequest(url)).thenThrow(ConnectException.class);
-            //跑起來
-            jrs.getData(url, StockNoSuggestion.class);
+            mock_2323_ok_request(StockNoSuggestion.class, 400);
             //驗證
             Assert.fail("錯誤，沒有拋出例外");
         } catch (NoInternetException e) {
-            System.out.println("NoInternetException=\n"+e.getMessage());
+            System.out.println("NoInternetException=\n" + e.getMessage());
             return;
         }
         Assert.fail("沒有捕獲到NoInternetException例外");
@@ -76,13 +69,12 @@ public class JsonRequestServiceTest {
 //            Assert.fail(e.getMessage());
 //        }
 //    }
-
     //正常取得2323回應
     @Test
     public void refactor_get2323_ok() {
 
         try {
-            Optional<StockNoSuggestion> ds = mock_2323_ok_request(StockNoSuggestion.class);
+            Optional<StockNoSuggestion> ds = mock_2323_ok_request(StockNoSuggestion.class, 200);
             //驗證，只要不是空的
             Assert.assertTrue(ds.isPresent());
         } catch (Exception e) {
@@ -90,7 +82,7 @@ public class JsonRequestServiceTest {
         }
     }
 
-    private <T> Optional<T> mock_2323_ok_request(Class<T> dataClass) throws InterruptedException, ServerMaintainException, IOException, DataClassFieldNameErrorException, NoInternetException {
+    private <T> Optional<T> mock_2323_ok_request(Class<T> dataClass, int stateCode) throws InterruptedException, ServerMaintainException, IOException, DataClassFieldNameErrorException, NoInternetException {
         //準備假物件
         MyHttpClient myHttpClient = Mockito.mock(MyHttpClient.class);
         HttpResponse<String> rsp = Mockito.mock(HttpResponse.class);
@@ -98,8 +90,7 @@ public class JsonRequestServiceTest {
         JsonRequestService jrs = new JsonRequestService(myHttpClient);
         UrlAndQueryString qs = new UrlAndQueryString("https://www.twse.com.tw/rwd/zh/api/codeQuery");
         qs.addParam("query", "2323");
-        Mockito.when(myHttpClient.sendRequest(qs)).thenReturn(rsp);
-        Mockito.when(rsp.body()).thenReturn("{\n"
+        String jsonString = "{\n"
                 + "\"query\": \"2323\",\n"
                 + "\"suggestions\": [\n"
                 + "\"2323\\t中環\",\n"
@@ -111,9 +102,24 @@ public class JsonRequestServiceTest {
                 + "\"2323W\\t中環己\",\n"
                 + "\"2323X\\t中環庚\"\n"
                 + "]\n"
-                + "}");
+                + "}";
+        Mockito.when(myHttpClient.sendRequest(qs)).thenReturn(rsp);
+        switch (stateCode) {
+            case 200:
+                Mockito.when(myHttpClient.sendRequest2(qs)).thenReturn(jsonString);
+                break;
+            case 404:
+                Mockito.when(myHttpClient.sendRequest2(qs)).thenThrow(new ServerMaintainException());
+                break;
+            case 400:
+                Mockito.when(myHttpClient.sendRequest2(qs)).thenThrow(new ConnectException());
+                break;
+            default:
+                throw new AssertionError();
+        }
+
         //跑起來
-        Optional<T> ds = jrs.getData(qs,dataClass);
+        Optional<T> ds = jrs.getData(qs, dataClass);
         return ds;
     }
 
@@ -158,18 +164,18 @@ public class JsonRequestServiceTest {
     @Test
     public void refactor_server404() {
         try {
-            //準備物件
-            UrlAndQueryString qs = new UrlAndQueryString("https://www.twse.com.tw/rwd/zh/api/codeQuery");
-            qs.addParam("query", "2323");
-            //準備假物件  
-            MyHttpClient myHttpClient = Mockito.mock(MyHttpClient.class);
-            //準備物件
-            JsonRequestService jrs = new JsonRequestService(myHttpClient);
-            HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
-            Mockito.when(myHttpClient.sendRequest(qs)).thenReturn(httpResponse);
-            Mockito.when(httpResponse.statusCode()).thenReturn(404);
-            //跑起來
-            Optional<StockNoSuggestion> ds = jrs.getData(qs, StockNoSuggestion.class);
+//            //準備物件
+//            UrlAndQueryString qs = new UrlAndQueryString("https://www.twse.com.tw/rwd/zh/api/codeQuery");
+//            qs.addParam("query", "2323");
+//            //準備假物件  
+//            MyHttpClient myHttpClient = Mockito.mock(MyHttpClient.class);
+//            //準備物件
+//            JsonRequestService jrs = new JsonRequestService(myHttpClient);
+//            HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
+//            Mockito.when(myHttpClient.sendRequest(qs)).thenReturn(httpResponse);
+//            Mockito.when(httpResponse.statusCode()).thenReturn(404);
+//            //跑起來
+            Optional<StockNoSuggestion> ds = mock_2323_ok_request(StockNoSuggestion.class, 404);
             //驗證，只要不是空的
             Assert.fail("沒有拋出例外");
         } catch (ServerMaintainException e) {
@@ -180,16 +186,16 @@ public class JsonRequestServiceTest {
     }
 
     @Test
-    public void dataClassError(){
+    public void dataClassError() {
 
         try {
-            
-            Optional<ErrorDataClass> ds = mock_2323_ok_request(ErrorDataClass.class);
+
+            Optional<ErrorDataClass> ds = mock_2323_ok_request(ErrorDataClass.class, 200);
             //驗證，只要不是空的
             Assert.fail("沒有拋出例外");
         } catch (DataClassFieldNameErrorException ex) {
-            System.out.println("DataClassFieldNameErrorException=\n"+ex.getMessage());
-        }catch(Exception e){
+            System.out.println("DataClassFieldNameErrorException=\n" + ex.getMessage());
+        } catch (Exception e) {
             Assert.fail(e.getMessage());
         }
     }

@@ -41,19 +41,16 @@ public class JsonRequestService {
     public <T> Optional<T> getData(UrlAndQueryString url, Class<T> dataClass) throws NoInternetException, ServerMaintainException, DataClassFieldNameErrorException {
         try {
             //發送請求
-            HttpResponse<String> rsp = myHttpClient.sendRequest(url);
-            if (rsp.statusCode() == 404) {
-                throw new ServerMaintainException();
-            }
+            String jsonString = myHttpClient.sendRequest2(url);
             //將取得的json回應,變成對應物件
             Gson gson = new Gson();
-            T jsonObj = gson.fromJson(rsp.body(), dataClass);
+            T jsonObj = gson.fromJson(jsonString, dataClass);
             if (jsonObj == null) {
                 return Optional.empty();
             }
             //假如解析出來的屬性都是null，通知使用者此dataClass是無效的
             if(isAllFieldNull(jsonObj)){
-                throw new DataClassFieldNameErrorException(rsp.body());
+                throw new DataClassFieldNameErrorException(jsonString);
             }
             
             return Optional.of(jsonObj);
